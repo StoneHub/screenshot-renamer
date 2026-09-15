@@ -3,9 +3,11 @@ from pathlib import Path
 import os
 import fcntl
 import json
+import platform
 import runpy
 import shutil
 import subprocess
+import sys
 
 root=Path(__file__).resolve().parent
 state=Path.home()/'Library/Application Support/Screenshot Renamer'
@@ -24,6 +26,29 @@ def screenshot_directory(configured, run=subprocess.run):
         raise RuntimeError('Screenshot destination is not a directory: '+str(directory))
     return directory
 
+
+def preflight(run=subprocess.run, which=shutil.which):
+    """Refuse to install a trigger that can never rename anything, and say why in one line each."""
+    problems=[]
+    if not Path('/usr/bin/fm').exists():
+        problems.append('/usr/bin/fm is missing. Apple ships it with macOS 27; this Mac runs '
+                        +platform.mac_ver()[0]+'.')
+    else:
+        available=run(['/usr/bin/fm','available'],text=True,capture_output=True)
+        if available.returncode != 0:
+            problems.append('fm available failed: '+(available.stderr or available.stdout).strip()
+                            +' Enable Apple Intelligence in System Settings and wait for the model to download.')
+    if not Path('/usr/bin/osacompile').exists() or not Path('/usr/bin/osascript').exists():
+        problems.append('osacompile or osascript is missing.')
+    return problems
+
+
+if __name__ == '__main__':
+    problems=preflight()
+    if problems and '--force' not in sys.argv:
+        for line in problems: print('Cannot install: '+line)
+        print('Fix the above and run install.py again, or pass --force to install anyway.')
+        raise SystemExit(1)
 
 configured=runpy.run_path(root/'config.py')['SCREENSHOT_DIRECTORY']
 destination=screenshot_directory(configured)
