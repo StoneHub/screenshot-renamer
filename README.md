@@ -53,6 +53,14 @@ The installer reads macOS's current screenshot destination, copies the helper fi
 
 ## Turn it off
 
+From the repository directory:
+
+```sh
+/usr/bin/python3 install.py --disable
+```
+
+If the repository checkout is gone, run the installed script directly:
+
 ```sh
 osascript "$HOME/Library/Application Support/Screenshot Renamer/disable.applescript" "$HOME/Desktop"
 ```
@@ -60,6 +68,14 @@ osascript "$HOME/Library/Application Support/Screenshot Renamer/disable.applescr
 This disables only this script and leaves any unrelated Folder Actions alone. No worker runs between events. An already-running request may finish. Installed files can stay for later re-enabling.
 
 ## Uninstall
+
+From the repository directory:
+
+```sh
+/usr/bin/python3 install.py --uninstall
+```
+
+If the repository checkout is gone, run the installed script directly:
 
 ```sh
 /usr/bin/python3 "$HOME/Library/Application Support/Screenshot Renamer/uninstall.py"

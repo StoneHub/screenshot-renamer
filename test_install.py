@@ -45,3 +45,39 @@ class PreflightTests(unittest.TestCase):
         self.assertIn('System Events', lines[0])
         self.assertIn('screenshot folder', lines[0])
 
+
+class InstalledCommandTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.home = Path(self.temp.name)
+        self.state = self.home / 'Library/Application Support/Screenshot Renamer'
+
+    def install_fixture(self):
+        self.state.mkdir(parents=True)
+        (self.state / 'config.py').write_text('SCREENSHOT_DIRECTORY = "/tmp/fixture"\n')
+        (self.state / 'disable.applescript').write_text('fixture')
+        (self.state / 'uninstall.py').write_text('fixture')
+
+    def test_not_installed_says_so(self):
+        for command in [install.uninstall_installed, install.disable_installed]:
+            run = Mock()
+            out = StringIO()
+            with redirect_stdout(out):
+                self.assertEqual(command(self.home, run), 1)
+            self.assertEqual(out.getvalue(), 'Screenshot Renamer is not installed.\n')
+            run.assert_not_called()
+
+    def test_uninstall_runs_the_installed_script(self):
+        self.install_fixture()
+        run = Mock()
+        with redirect_stdout(StringIO()):
+            self.assertEqual(install.uninstall_installed(self.home, run), 0)
+        run.assert_called_once_with(['/usr/bin/python3', str(self.state / 'uninstall.py')], check=True)
+
+    def test_disable_passes_the_configured_folder(self):
+        self.install_fixture()
+        run = Mock()
+        with redirect_stdout(StringIO()):
+            self.assertEqual(install.disable_installed(self.home, run), 0)
+        run.assert_called_once_with(['/usr/bin/osascript', str(self.state / 'disable.applescript'), '/tmp/fixture'], check=True)

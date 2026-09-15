@@ -49,6 +49,34 @@ def announce():
     for line in PERMISSIONS: print(line)
 
 
+def installed(home=None):
+    """Return the installed state directory, or None when nothing is installed there."""
+    directory=(Path.home() if home is None else Path(home))/'Library/Application Support/Screenshot Renamer'
+    return directory if (directory/'config.py').is_file() else None
+
+
+def disable_installed(home=None, run=subprocess.run):
+    """Run the installed disable script the way the README shows, without the long path."""
+    directory=installed(home)
+    if directory is None or not (directory/'disable.applescript').is_file():
+        print('Screenshot Renamer is not installed.')
+        return 1
+    destination=runpy.run_path(directory/'config.py')['SCREENSHOT_DIRECTORY']
+    run(['/usr/bin/osascript',str(directory/'disable.applescript'),destination],check=True)
+    print('Disabled Screenshot Renamer for '+destination+'. Installed files stay for re-enabling.')
+    return 0
+
+
+def uninstall_installed(home=None, run=subprocess.run):
+    """Run the installed uninstall.py the way the README shows, without the long path."""
+    directory=installed(home)
+    if directory is None or not (directory/'uninstall.py').is_file():
+        print('Screenshot Renamer is not installed.')
+        return 1
+    run(['/usr/bin/python3',str(directory/'uninstall.py')],check=True)
+    return 0
+
+
 def install():
     configured=runpy.run_path(root/'config.py')['SCREENSHOT_DIRECTORY']
     destination=screenshot_directory(configured)
@@ -85,6 +113,8 @@ def install():
 
 
 if __name__ == '__main__':
+    if '--uninstall' in sys.argv: raise SystemExit(uninstall_installed())
+    if '--disable' in sys.argv: raise SystemExit(disable_installed())
     announce()
     problems=preflight()
     if problems and '--force' not in sys.argv:
