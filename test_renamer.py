@@ -30,21 +30,24 @@ class Tests(unittest.TestCase):
         with patch.object(r, 'ready', side_effect=r.identity):
             return r.process(p, self.history, lambda _: title)
 
-    def test_rename_and_undo_preserve_bytes_and_metadata(self):
+    def test_rename_preserves_bytes_metadata_and_creation_date(self):
         p = self.screenshot(); old = p.read_bytes()
+        created = p.stat().st_birthtime
         self.assertEqual(self.run_file(p), 'renamed')
-        dest = Path(self.history[-1]['renamed'])
+        dest = next(r.DESKTOP.iterdir())
         self.assertEqual(dest.read_bytes(), old); self.assertTrue(r.is_screenshot(dest))
+        self.assertEqual(dest.stat().st_birthtime, created)
         self.assertEqual(self.run_file(dest), 'already-processed')
-        r.undo(self.history); self.assertEqual(p.read_bytes(), old)
-        self.assertEqual(self.run_file(p), 'already-processed')
+        stored = json.loads((r.STATE / 'processed.json').read_text())
+        self.assertTrue(all(isinstance(value, int) for row in stored for value in row))
+        self.assertFalse((r.STATE / 'history.json').exists())
 
     def test_collision_does_not_overwrite(self):
         a=self.screenshot('Screenshot a.png'); b=self.screenshot('Screenshot b.png')
         with patch.object(r.datetime, 'datetime', wraps=r.datetime.datetime) as dt:
             dt.fromtimestamp.return_value.strftime.return_value='2026-09-15 12.00.00'
             self.run_file(a); self.run_file(b)
-        names=[Path(x['renamed']) for x in self.history]
+        names=list(r.DESKTOP.iterdir())
         self.assertNotEqual(*names); self.assertTrue(all(x.exists() for x in names))
 
     def test_ordinary_image_is_not_screenshot(self):
@@ -73,11 +76,6 @@ class Tests(unittest.TestCase):
         with patch.object(r,'ready',side_effect=r.identity):
             self.assertEqual(r.process(p,self.history,generate),'changed-during-generation')
         self.assertTrue(p.exists())
-
-    def test_undo_will_not_overwrite(self):
-        p=self.screenshot(); self.run_file(p); p.write_bytes(b'new file')
-        with self.assertRaises(FileExistsError): r.undo(self.history)
-        self.assertEqual(p.read_bytes(),b'new file')
 
     def test_existing_files_require_explicit_batch_opt_in(self):
         p=self.screenshot()

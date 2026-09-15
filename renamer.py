@@ -7,7 +7,6 @@ import json
 import os
 from pathlib import Path
 import plistlib
-import re
 import stat
 import subprocess
 import sys
@@ -76,16 +75,16 @@ def rename_exclusive(source, destination):
         raise OSError(err, os.strerror(err))
 
 
-def load_history():
-    path = STATE / 'history.json'
+def load_processed():
+    path = STATE / 'processed.json'
     return json.loads(path.read_text()) if path.exists() else []
 
 
-def save_history(history):
-    temp = STATE / 'history.tmp'
-    temp.write_text(json.dumps(history[-200:], indent=2) + '\n')
+def save_processed(processed):
+    temp = STATE / 'processed.tmp'
+    temp.write_text(json.dumps(processed[-200:]) + '\n')
     os.chmod(temp, 0o600)
-    os.replace(temp, STATE / 'history.json')
+    os.replace(temp, STATE / 'processed.json')
 
 
 def log(status):
@@ -109,12 +108,12 @@ def describe(path):
     return sanitize(json.loads(p.stdout)['title'])
 
 
-def process(path, history, generate=describe, *, allow_existing=False):
+def process(path, processed, generate=describe, *, allow_existing=False):
     path = Path(os.path.abspath(path))
     if path.parent != DESKTOP or path.is_symlink() or path.suffix.lower() not in ('.png', '.jpg', '.jpeg', '.heic'):
         return 'ignored'
     info = identity(path)
-    if any(tuple(row['identity'][:2]) == info[:2] for row in history):
+    if list(info) in processed:
         return 'already-processed'
     # Only fresh save events; never sweep existing Desktop screenshots.
     if not allow_existing and time.time() - path.stat().st_birthtime > 300:
@@ -129,43 +128,21 @@ def process(path, history, generate=describe, *, allow_existing=False):
         dest = path.with_name(stamp + ' — ' + title + suffix + path.suffix.lower())
         if dest == path:
             return 'unchanged'
-        # Journal intent first so a process interruption cannot cause a second rename.
-        row = {'original': str(path), 'renamed': str(dest), 'identity': list(info), 'status': 'pending'}
-        history.append(row)
-        save_history(history)
+        # Store only file identity, never old or generated filenames.
+        processed.append(list(info))
+        save_processed(processed)
         try:
             rename_exclusive(path, dest)
         except FileExistsError:
-            history.pop()
-            save_history(history)
+            processed.pop()
+            save_processed(processed)
             continue
         except OSError:
-            history.pop()
-            save_history(history)
+            processed.pop()
+            save_processed(processed)
             raise
-        row['status'] = 'renamed'
-        save_history(history)
         return 'renamed'
     return 'name-collision-limit'
-
-
-def undo(history):
-    for row in reversed(history):
-        if row['status'] not in ('renamed', 'pending'):
-            continue
-        original, renamed = Path(row['original']), Path(row['renamed'])
-        if original.parent != DESKTOP or renamed.parent != DESKTOP:
-            continue
-        if not renamed.exists():
-            continue
-        if identity(renamed) != tuple(row['identity']):
-            raise ValueError('undo-file-changed')
-        rename_exclusive(renamed, original)
-        row['status'] = 'undone'
-        save_history(history)
-        print('Restored the previous screenshot filename.')
-        return
-    print('No unchanged renamed screenshot to undo.')
 
 
 def main():
@@ -173,13 +150,13 @@ def main():
     STATE.mkdir(parents=True, exist_ok=True)
     with (STATE / 'worker.lock').open('a') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
-        history = load_history()
-        if sys.argv[1:] == ['--undo']:
-            undo(history)
+        # A worker queued before uninstall must not recreate state or start inference.
+        if not (ROOT / 'schema.json').exists():
             return
+        processed = load_processed()
         for arg in sys.argv[1:]:
             try:
-                log(process(Path(arg), history))
+                log(process(Path(arg), processed))
             except subprocess.TimeoutExpired:
                 log('model-timeout-original-kept')
             except Exception as exc:

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="277" viewBox="0 0 1100 400">
+  <rect width="1100" height="400" rx="22" fill="#f3f5f8"/>
+  <g font-family="-apple-system, BlinkMacSystemFont, sans-serif">
+    <text x="40" y="56" font-size="28" font-weight="700" fill="#172536">Screenshot Renamer</text>
+    <text x="40" y="90" font-size="18" fill="#526173">Same image. A name you can recognize. Generated locally on your Mac.</text>
+    <rect x="40" y="120" width="310" height="240" rx="12" fill="white" stroke="#d5dce5"/>
+    <path d="M52 120 H338 Q350 120 350 132 V162 H40 V132 Q40 120 52 120" fill="#34475b"/>
+    <text x="58" y="147" font-size="18" fill="white">Workshop Planner</text>
+    <text x="58" y="204" font-size="22" font-weight="600" fill="#172536">Weekend checklist</text>
+    <g font-size="17" fill="#34475b">
+      <text x="58" y="250">1. Organize drill bits</text>
+      <text x="58" y="286">2. Label storage bins</text>
+      <text x="58" y="322">3. Sweep the workshop</text>
+    </g>
+    <text x="394" y="157" font-size="14" font-weight="700" fill="#68778b">BEFORE</text>
+    <text x="394" y="194" font-size="22" fill="#34475b">Screenshot 2026-09-15 at 7.47.31 AM.png</text>
+    <path d="M418 216 v31 m-8 -8 8 8 8 -8" fill="none" stroke="#67788c" stroke-width="3"/>
+    <text x="394" y="279" font-size="14" font-weight="700" fill="#23755d">AFTER</text>
+    <text x="394" y="314" font-size="20" fill="#172536">2026-09-15 07.47.31 —</text>
+    <text x="394" y="344" font-size="22" font-weight="600" fill="#172536">Workshop Planner Weekend Checklist.png</text>
+  </g>
+</svg>
