@@ -1,6 +1,6 @@
 # Screenshot Renamer
 
-An on-demand macOS 27 Folder Action that gives newly saved Desktop screenshots descriptive names using Apple's on-device Foundation Model. No menu-bar icon, login app, polling loop, HTTP server, or custom model download.
+An on-demand macOS 27 Folder Action that gives each new Desktop screenshot a descriptive name using Apple's on-device Foundation Model. It starts when macOS saves the screenshot file from your normal screenshot shortcut, renames that one file, then exits. No menu-bar icon, login app, polling loop, HTTP server, or custom model download.
 
 ![A workshop screenshot renamed from a timestamp to Workshop Planner Weekend Checklist](docs/before-after.svg)
 
@@ -8,7 +8,7 @@ Illustration using a synthetic workshop screenshot. The title shown is actual ou
 
 ## Use
 
-Take a screenshot using your normal Mac hotkeys and save it to Desktop. After the file finishes saving, the helper processes the image, renames it once, and exits. App names are inferred only from visible image content. No foreground-app inspection. Existing screenshots are not scanned or renamed.
+Take a screenshot using your normal Mac hotkeys and save it to Desktop. macOS adds the new file to Desktop, which starts the Folder Action. After the file finishes saving, the helper processes that screenshot, renames it once, and exits. App names are inferred only from visible image content. No foreground-app inspection. Existing screenshots are not scanned or renamed.
 
 Only files carrying Apple's `kMDItemIsScreenCapture` metadata are eligible. Screenshots copied only to the clipboard, saved elsewhere, or stripped of that metadata are not processed. Other Desktop additions can briefly launch the helper; they do not cause model inference. Failed/refused/timed-out generations leave the original filename intact. Apple manages model availability and memory; the helper does not control system model residency.
 
@@ -65,7 +65,7 @@ If a screenshot keeps its original name, confirm it was saved to Desktop and che
 
 Only the image is passed to the local system model. No transcript, image copies, filename history, app activity history, or model stderr is stored. `processed.json` keeps only the last 200 numeric file identities to prevent repeated processing. `status.log` contains timestamps and status codes only. State files are account-private. Names are sanitized and Darwin's exclusive atomic rename prevents overwrites. Only files less than five minutes old are eligible for automatic processing. Renaming preserves the image bytes and creation date; the new filename also includes the original creation timestamp.
 
-Folder Actions are macOS's trigger mechanism, not a guaranteed screenshot event API. The helper only receives added files and does not scan Desktop on startup. A cancelled/incomplete save or delayed/missed event can leave the standard name. A user rename during generation prevents the old path from being renamed. Model output is a fallible description; no screenshot text is executed.
+Folder Actions are macOS's file-saved trigger mechanism for this workflow. The helper receives each file macOS adds to Desktop, confirms Apple's screenshot metadata before asking the model, then exits. It does not scan Desktop on startup. A cancelled/incomplete save or delayed/missed event can leave the standard name. A user rename during generation prevents the old path from being renamed. Model output is a fallible description; no screenshot text is executed.
 
 ## Tests
 
