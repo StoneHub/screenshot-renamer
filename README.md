@@ -1,6 +1,6 @@
 # Screenshot Renamer
 
-An automatic macOS 27 utility that renames each new screenshot with a descriptive name using Apple's on-device Foundation Model. Once installed, it handles screenshots in the background as macOS saves them, then exits. No menu-bar icon, login app, polling loop, HTTP server, or custom model download.
+An automatic macOS 27 utility that renames each new screenshot with a descriptive name using Apple's on-device Foundation Model. It needs macOS 27 with Apple Intelligence and cannot run on macOS 26 or earlier, because Apple's `/usr/bin/fm` command does not exist there. Once installed, it handles screenshots in the background as macOS saves them, then exits. No menu-bar icon, login app, polling loop, HTTP server, or custom model download.
 
 **Automatic:** after installation, the user does nothing beyond their normal screenshot shortcut.
 
@@ -39,7 +39,7 @@ Check these before installing:
 /usr/bin/python3 --version
 ```
 
-`fm available` should report that the system model is available. Apple manages the model download; this project does not bundle model weights. The helper serializes overlapping requests and has a 45-second model timeout. Feature announcements are described in [Apple's CLI session](https://developer.apple.com/videos/play/wwdc2026/334/).
+`fm available` should report that the system model is available. `install.py` runs these checks itself and refuses to install on an unsupported Mac; `--force` overrides that refusal. Apple manages the model download; this project does not bundle model weights. The helper serializes overlapping requests and has a 45-second model timeout. Feature announcements are described in [Apple's CLI session](https://developer.apple.com/videos/play/wwdc2026/334/).
 
 ## Install
 
