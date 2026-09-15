@@ -49,7 +49,7 @@ Download or clone the repository, then run from its directory:
 /usr/bin/python3 install.py
 ```
 
-The installer reads macOS's current screenshot destination, copies the helper files to `~/Library/Application Support/Screenshot Renamer`, compiles `Screenshot Renamer.scpt` into `~/Library/Scripts/Folder Action Scripts`, and attaches that script to the detected folder using System Events. It enables Folder Actions globally and preserves existing scripts. If you already have disabled Folder Actions configured, review them before enabling the global switch. macOS may request Automation or folder access.
+The installer reads macOS's current screenshot destination, copies the helper files to `~/Library/Application Support/Screenshot Renamer`, compiles `Screenshot Renamer.scpt` into `~/Library/Scripts/Folder Action Scripts`, and attaches that script to the detected folder using System Events. It enables Folder Actions globally and preserves existing scripts. If you already have disabled Folder Actions configured, review them before enabling the global switch. macOS asks twice, once to let Terminal control System Events and once for access to the screenshot folder, and both must be allowed.
 
 ## Turn it off
 

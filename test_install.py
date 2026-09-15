@@ -35,3 +35,13 @@ class PreflightTests(unittest.TestCase):
     def test_healthy_mac_has_no_problems(self):
         self.fm.write_text('')
         self.assertEqual(install.preflight(run=ok, fm=self.fm), [])
+
+    def test_permission_notice_is_two_lines(self):
+        out = StringIO()
+        with redirect_stdout(out):
+            install.announce()
+        lines = out.getvalue().splitlines()
+        self.assertEqual(len(lines), 2)
+        self.assertIn('System Events', lines[0])
+        self.assertIn('screenshot folder', lines[0])
+

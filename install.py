@@ -12,6 +12,8 @@ import sys
 root=Path(__file__).resolve().parent
 state=Path.home()/'Library/Application Support/Screenshot Renamer'
 scripts=Path.home()/'Library/Scripts/Folder Action Scripts'
+PERMISSIONS=['macOS will ask to allow Terminal (or whatever runs install.py) to control System Events, and later to access the screenshot folder.',
+             'Allow both, or the script cannot be attached and screenshots cannot be renamed.']
 
 
 def screenshot_directory(configured, run=subprocess.run):
@@ -41,6 +43,10 @@ def preflight(run=subprocess.run, which=shutil.which, fm=Path('/usr/bin/fm'), ve
     if not Path('/usr/bin/osacompile').exists() or not Path('/usr/bin/osascript').exists():
         problems.append('osacompile or osascript is missing.')
     return problems
+
+
+def announce():
+    for line in PERMISSIONS: print(line)
 
 
 def install():
@@ -79,6 +85,7 @@ def install():
 
 
 if __name__ == '__main__':
+    announce()
     problems=preflight()
     if problems and '--force' not in sys.argv:
         for line in problems: print('Cannot install: '+line)
