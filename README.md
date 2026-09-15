@@ -69,7 +69,7 @@ This disables the trigger, waits for the current worker, and removes the install
 
 ## Troubleshooting
 
-If a screenshot keeps its original name, check `fm available`. Then open Folder Actions Setup and confirm the screenshot-destination action and Screenshot Renamer script are enabled. Inspect `~/Library/Application Support/Screenshot Renamer/status.log` for status codes. Model refusals, timeouts, and missed folder events leave the original file intact.
+If a screenshot keeps its original name, run `/usr/bin/python3 doctor.py` from the repository directory. It prints the macOS and `fm` status, the screenshot folder, the compiled script, what System Events reports for the folder action, and the last five lines of `status.log`, and exits 1 when something is off. Then check `fm available`. Then open Folder Actions Setup and confirm the screenshot-destination action and Screenshot Renamer script are enabled. Inspect `~/Library/Application Support/Screenshot Renamer/status.log` for status codes. Model refusals, timeouts, and missed folder events leave the original file intact.
 
 ## Privacy and reliability
 
