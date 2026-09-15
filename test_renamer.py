@@ -79,6 +79,13 @@ class Tests(unittest.TestCase):
         with self.assertRaises(FileExistsError): r.undo(self.history)
         self.assertEqual(p.read_bytes(),b'new file')
 
+    def test_existing_files_require_explicit_batch_opt_in(self):
+        p=self.screenshot()
+        with patch.object(r.time, 'time', return_value=p.stat().st_birthtime+600):
+            self.assertEqual(self.run_file(p), 'old-file-ignored')
+            with patch.object(r, 'ready', side_effect=r.identity):
+                self.assertEqual(r.process(p,self.history,lambda _: 'Workshop checklist',allow_existing=True),'renamed')
+
     def test_title_sanitization(self):
         self.assertEqual(r.sanitize('../../Hello\nWorld: /test'), 'Hello World test')
         with self.assertRaises(ValueError): r.sanitize('///')

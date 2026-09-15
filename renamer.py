@@ -109,7 +109,7 @@ def describe(path):
     return sanitize(json.loads(p.stdout)['title'])
 
 
-def process(path, history, generate=describe):
+def process(path, history, generate=describe, *, allow_existing=False):
     path = Path(os.path.abspath(path))
     if path.parent != DESKTOP or path.is_symlink() or path.suffix.lower() not in ('.png', '.jpg', '.jpeg', '.heic'):
         return 'ignored'
@@ -117,7 +117,7 @@ def process(path, history, generate=describe):
     if any(tuple(row['identity'][:2]) == info[:2] for row in history):
         return 'already-processed'
     # Only fresh save events; never sweep existing Desktop screenshots.
-    if time.time() - path.stat().st_birthtime > 300:
+    if not allow_existing and time.time() - path.stat().st_birthtime > 300:
         return 'old-file-ignored'
     info = ready(path)
     title = generate(path)
