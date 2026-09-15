@@ -1,0 +1,16 @@
+{
+  "additionalProperties" : false,
+  "properties" : {
+    "title" : {
+      "type" : "string"
+    }
+  },
+  "required" : [
+    "title"
+  ],
+  "type" : "object",
+  "title" : "ScreenshotName",
+  "x-order" : [
+    "title"
+  ]
+}
