@@ -1,7 +1,7 @@
 on run argv
-    set desktopPath to item 1 of argv
+    set targetPath to item 1 of argv
     tell application "System Events"
-        repeat with targetAction in (every folder action whose path is desktopPath)
+        repeat with targetAction in (every folder action whose path is targetPath)
             if exists script "Screenshot Renamer.scpt" of targetAction then
                 set enabled of script "Screenshot Renamer.scpt" of targetAction to false
             end if

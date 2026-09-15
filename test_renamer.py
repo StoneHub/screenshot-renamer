@@ -17,12 +17,12 @@ class Tests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
-        r.DESKTOP = self.root / 'Desktop'; r.DESKTOP.mkdir()
+        r.DESTINATION = self.root / 'Screenshots'; r.DESTINATION.mkdir()
         r.STATE = self.root / 'state'; r.STATE.mkdir()
         self.history = []
 
     def screenshot(self, name='Screenshot test.png'):
-        p = r.DESKTOP / name; p.write_bytes(b'image fixture')
+        p = r.DESTINATION / name; p.write_bytes(b'image fixture')
         subprocess.run(['/usr/bin/xattr', '-wx', r.MARKER, plistlib.dumps(True, fmt=plistlib.FMT_BINARY).hex(), str(p)], check=True)
         return p
 
@@ -34,7 +34,7 @@ class Tests(unittest.TestCase):
         p = self.screenshot(); old = p.read_bytes()
         created = p.stat().st_birthtime
         self.assertEqual(self.run_file(p), 'renamed')
-        dest = next(r.DESKTOP.iterdir())
+        dest = next(r.DESTINATION.iterdir())
         self.assertEqual(dest.read_bytes(), old); self.assertTrue(r.is_screenshot(dest))
         self.assertEqual(dest.stat().st_birthtime, created)
         self.assertEqual(self.run_file(dest), 'already-processed')
@@ -47,11 +47,11 @@ class Tests(unittest.TestCase):
         with patch.object(r.datetime, 'datetime', wraps=r.datetime.datetime) as dt:
             dt.fromtimestamp.return_value.strftime.return_value='2026-09-15 12.00.00'
             self.run_file(a); self.run_file(b)
-        names=list(r.DESKTOP.iterdir())
+        names=list(r.DESTINATION.iterdir())
         self.assertNotEqual(*names); self.assertTrue(all(x.exists() for x in names))
 
     def test_ordinary_image_is_not_screenshot(self):
-        p=r.DESKTOP/'photo.png'; p.write_bytes(b'ordinary')
+        p=r.DESTINATION/'photo.png'; p.write_bytes(b'ordinary')
         self.assertFalse(r.is_screenshot(p))
         with patch.object(r.time, 'sleep'):
             with self.assertRaises(ValueError): r.process(p,self.history,lambda _:self.fail('model called'))
@@ -65,7 +65,7 @@ class Tests(unittest.TestCase):
         self.assertTrue(p.exists()); self.assertEqual(self.history,[])
 
     def test_symlink_and_outside_desktop_ignored(self):
-        p=self.screenshot(); link=r.DESKTOP/'Screenshot link.png'; link.symlink_to(p)
+        p=self.screenshot(); link=r.DESTINATION/'Screenshot link.png'; link.symlink_to(p)
         self.assertEqual(self.run_file(link),'ignored')
         other=self.root/'Screenshot outside.png'; other.write_bytes(b'x')
         self.assertEqual(self.run_file(other),'ignored')

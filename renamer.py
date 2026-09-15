@@ -12,10 +12,12 @@ import subprocess
 import sys
 import time
 import unicodedata
+from config import SCREENSHOT_DIRECTORY
 
 ROOT = Path(__file__).resolve().parent
 STATE = Path.home() / 'Library/Application Support/Screenshot Renamer'
-DESKTOP = Path.home() / 'Desktop'
+SCREENSHOT_DIRECTORY = SCREENSHOT_DIRECTORY or str(Path.home() / 'Desktop')
+DESTINATION = Path(SCREENSHOT_DIRECTORY).expanduser()
 MARKER = 'com.apple.metadata:kMDItemIsScreenCapture'
 PROMPT = ('Give this screenshot a short descriptive title of 3 to 7 words for a filename, '
           'without a date or file extension. Include an application name only if clearly visible. '
@@ -110,7 +112,7 @@ def describe(path):
 
 def process(path, processed, generate=describe, *, allow_existing=False):
     path = Path(os.path.abspath(path))
-    if path.parent != DESKTOP or path.is_symlink() or path.suffix.lower() not in ('.png', '.jpg', '.jpeg', '.heic'):
+    if path.parent != DESTINATION or path.is_symlink() or path.suffix.lower() not in ('.png', '.jpg', '.jpeg', '.heic'):
         return 'ignored'
     info = identity(path)
     if list(info) in processed:

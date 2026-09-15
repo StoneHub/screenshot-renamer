@@ -14,6 +14,7 @@ class UninstallTests(unittest.TestCase):
         self.state = self.home / 'Library/Application Support/Screenshot Renamer'
         self.state.mkdir(parents=True)
         (self.state / 'disable.applescript').write_text('fixture')
+        (self.state / 'config.py').write_text('SCREENSHOT_DIRECTORY = "/tmp/fixture"\n')
         (self.state / 'history.json').write_text('private undo fixture')
         self.script = self.home / 'Library/Scripts/Folder Action Scripts/Screenshot Renamer.scpt'
         self.script.parent.mkdir(parents=True)

@@ -3,6 +3,7 @@
 from pathlib import Path
 import fcntl
 import os
+import runpy
 import shutil
 import subprocess
 
@@ -19,7 +20,8 @@ def uninstall(home=None, run=subprocess.run):
     if not (state / 'disable.applescript').is_file():
         raise RuntimeError('Missing disable script; no files were moved.')
     # Abort before moving anything if macOS cannot disable the event handler.
-    run(['/usr/bin/osascript', str(state / 'disable.applescript'), str(home / 'Desktop')], check=True)
+    config = runpy.run_path(state / 'config.py')
+    run(['/usr/bin/osascript', str(state / 'disable.applescript'), config['SCREENSHOT_DIRECTORY']], check=True)
     with (state / 'worker.lock').open('a') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         if script.exists():

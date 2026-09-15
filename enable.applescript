@@ -1,9 +1,9 @@
 on run argv
-    set desktopPath to item 1 of argv
+    set targetPath to item 1 of argv
     tell application "System Events"
-        set matches to every folder action whose path is desktopPath
+        set matches to every folder action whose path is targetPath
         if (count of matches) is 0 then
-            set targetAction to make new folder action with properties {name:"Desktop", path:desktopPath, enabled:true}
+            set targetAction to make new folder action with properties {name:"Screenshot destination", path:targetPath, enabled:true}
         else
             set targetAction to item 1 of matches
             set enabled of targetAction to true
