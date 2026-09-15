@@ -1,6 +1,6 @@
 # Screenshot Renamer
 
-An on-demand macOS 27 Folder Action that gives each new Desktop screenshot a descriptive name using Apple's on-device Foundation Model. It starts when macOS saves the screenshot file from your normal screenshot shortcut, renames that one file, then exits. No menu-bar icon, login app, polling loop, HTTP server, or custom model download.
+An automatic macOS 27 utility that renames each new Desktop screenshot with a descriptive name using Apple's on-device Foundation Model. Once installed, it handles screenshots in the background as macOS saves them, then exits. No menu-bar icon, login app, polling loop, HTTP server, or custom model download.
 
 ![A workshop screenshot renamed from a timestamp to Workshop Planner Weekend Checklist](docs/before-after.svg)
 
@@ -8,7 +8,7 @@ Illustration using a synthetic workshop screenshot. The title shown is actual ou
 
 ## Use
 
-Take a screenshot using your normal Mac hotkeys and save it to Desktop. macOS adds the new file to Desktop, which starts the Folder Action. After the file finishes saving, the helper processes that screenshot, renames it once, and exits. App names are inferred only from visible image content. No foreground-app inspection. Existing screenshots are not scanned or renamed.
+After installation, use your normal screenshot shortcut. Each new screenshot saved to Desktop is renamed automatically after macOS finishes writing it. App names are inferred only from visible image content. No foreground-app inspection. Existing screenshots are not scanned or renamed.
 
 Only files carrying Apple's `kMDItemIsScreenCapture` metadata are eligible. Screenshots copied only to the clipboard, saved elsewhere, or stripped of that metadata are not processed. Other Desktop additions can briefly launch the helper; they do not cause model inference. Failed/refused/timed-out generations leave the original filename intact. Apple manages model availability and memory; the helper does not control system model residency.
 
