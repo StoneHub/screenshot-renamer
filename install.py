@@ -4,6 +4,7 @@ import os
 import fcntl
 import json
 import platform
+import re
 import runpy
 import shutil
 import subprocess
@@ -37,7 +38,11 @@ def preflight(run=subprocess.run, which=shutil.which, fm=Path('/usr/bin/fm'), ve
                         +(version or platform.mac_ver()[0])+'.')
     else:
         available=run([str(fm),'available'],text=True,capture_output=True)
-        if available.returncode != 0:
+        # Newer fm versions also report PCC and can exit 1 when only that
+        # cloud model is unavailable. We require only the on-device model.
+        output=re.sub(r'\x1b\[[0-9;]*m', '', available.stdout or '')
+        system_ready=bool(re.search(r'(?m)^\s*✓\s+system\b', output))
+        if available.returncode != 0 and not system_ready:
             problems.append('fm available failed: '+(available.stderr or available.stdout).strip()
                             +' Enable Apple Intelligence in System Settings and wait for the model to download.')
     if not Path('/usr/bin/osacompile').exists() or not Path('/usr/bin/osascript').exists():

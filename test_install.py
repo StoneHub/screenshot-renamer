@@ -36,6 +36,19 @@ class PreflightTests(unittest.TestCase):
         self.fm.write_text('')
         self.assertEqual(install.preflight(run=ok, fm=self.fm), [])
 
+    def test_unavailable_cloud_model_does_not_block_local_model(self):
+        self.fm.write_text('')
+        run = Mock(return_value=subprocess.CompletedProcess([], 1,
+            stdout='Apple Foundation Models\n  \x1b[32m✓ system (Advanced)\x1b[0m\n  ✗ pcc\n',
+            stderr='Sign in to iCloud'))
+        self.assertEqual(install.preflight(run=run, fm=self.fm), [])
+
+    def test_available_cloud_model_does_not_replace_local_model(self):
+        self.fm.write_text('')
+        run = Mock(return_value=subprocess.CompletedProcess([], 1,
+            stdout='Apple Foundation Models\n  ✗ system\n  ✓ pcc\n', stderr='Model not ready'))
+        self.assertEqual(len(install.preflight(run=run, fm=self.fm)), 1)
+
     def test_permission_notice_is_two_lines(self):
         out = StringIO()
         with redirect_stdout(out):
