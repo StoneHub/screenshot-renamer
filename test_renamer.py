@@ -88,4 +88,42 @@ class Tests(unittest.TestCase):
         self.assertEqual(r.sanitize('../../Hello\nWorld: /test'), 'Hello World test')
         with self.assertRaises(ValueError): r.sanitize('///')
 
+    def test_ready_waits_for_two_stable_samples(self):
+        p = self.screenshot()
+        first = r.identity(p)
+        changed = (*first[:2], first[2] + 1, first[3] + 1)
+        with patch.object(r, 'identity', side_effect=[first, changed, changed, changed]), \
+             patch.object(r.time, 'sleep') as sleep:
+            self.assertEqual(r.ready(p), changed)
+        self.assertEqual(sleep.call_count, 3)
+        sleep.assert_called_with(.1)
+
+    def test_ready_allows_delayed_metadata(self):
+        p = self.screenshot()
+        clock = [0.0]
+        def sleep(seconds): clock[0] += seconds
+        with patch.object(r.time, 'sleep', side_effect=sleep), \
+             patch.object(r.time, 'monotonic', side_effect=lambda: clock[0]), \
+             patch.object(r, 'is_screenshot', side_effect=lambda _: clock[0] >= 2):
+            self.assertEqual(r.ready(p), r.identity(p))
+        self.assertGreaterEqual(clock[0], 2)
+        self.assertLess(clock[0], 3)
+
+    def test_ready_stops_after_original_grace_period(self):
+        p = self.screenshot()
+        with patch.object(r, 'is_screenshot', return_value=False), \
+             patch.object(r.time, 'sleep') as sleep:
+            with self.assertRaises(ValueError): r.ready(p)
+        self.assertAlmostEqual(sum(call.args[0] for call in sleep.call_args_list), 10)
+
+    def test_timings_are_numeric_and_model_failure_is_measured(self):
+        p = self.screenshot()
+        timings = {}
+        with patch.object(r, 'ready', side_effect=r.identity):
+            with self.assertRaises(RuntimeError):
+                r.process(p, self.history, lambda _: (_ for _ in ()).throw(RuntimeError()),
+                          timings=timings)
+        self.assertEqual(set(timings), {'ready', 'model'})
+        self.assertTrue(all(isinstance(value, float) and value >= 0 for value in timings.values()))
+
 if __name__=='__main__': unittest.main()

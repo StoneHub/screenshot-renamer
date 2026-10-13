@@ -34,12 +34,12 @@ This is an early macOS 27 beta utility, tested on macOS 27.0 build **26A428**. O
 Check these before installing:
 
 ```sh
-/usr/bin/fm available
+/usr/bin/fm models
 /usr/bin/fm respond --help
 /usr/bin/python3 --version
 ```
 
-`fm available` should report that the system model is available. `install.py` runs these checks itself and refuses to install on an unsupported Mac; `--force` overrides that refusal. Apple manages the model download; this project does not bundle model weights. The helper serializes overlapping requests and has a 45-second model timeout. Feature announcements are described in [Apple's CLI session](https://developer.apple.com/videos/play/wwdc2026/334/).
+`fm models` should show the `system` model as available. This utility uses only that on-device model; the status of `pcc` does not affect it. `install.py` runs its own prerequisite checks and refuses to install on an unsupported Mac; `--force` overrides that refusal. Apple manages the model download; this project does not bundle model weights. The helper serializes overlapping requests and has a 45-second model timeout. Feature announcements are described in [Apple's CLI session](https://developer.apple.com/videos/play/wwdc2026/334/).
 
 ## Install
 
@@ -85,11 +85,13 @@ This disables the trigger, waits for the current worker, and removes the install
 
 ## Troubleshooting
 
-If a screenshot keeps its original name, run `/usr/bin/python3 doctor.py` from the repository directory. It prints the macOS and `fm` status, the screenshot folder, the compiled script, what System Events reports for the folder action, and the last five lines of `status.log`, and exits 1 when something is off. Then check `fm available`. Then open Folder Actions Setup and confirm the screenshot-destination action and Screenshot Renamer script are enabled. Inspect `~/Library/Application Support/Screenshot Renamer/status.log` for status codes. Model refusals, timeouts, and missed folder events leave the original file intact.
+If a screenshot keeps its original name, run `/usr/bin/python3 doctor.py` from the repository directory. It prints the macOS and `fm` status, the screenshot folder, the compiled script, what System Events reports for the folder action, and the last five lines of `status.log`, and exits 1 when something is off. Then check `fm models` and open Folder Actions Setup to confirm the screenshot-destination action and Screenshot Renamer script are enabled. Inspect `~/Library/Application Support/Screenshot Renamer/status.log` for status codes and durations: `ready` measures file/metadata readiness, `model` measures local inference, `total` measures that file's processing, and `lock` measures this worker's initial queue wait. These contain no filenames or image content. Model refusals, timeouts, and missed folder events leave the original file intact.
+
+Completed screenshots need two matching file checks 100 milliseconds apart, reducing the minimum readiness wait from one second to 200 milliseconds. An incomplete file or delayed screenshot metadata still gets the original ten-second grace period. Overall speed also depends on Apple's model and Folder Action delivery.
 
 ## Privacy and reliability
 
-Only the image is passed to the local system model. No transcript, image copies, filename history, app activity history, or model stderr is stored. `processed.json` keeps only the last 200 numeric file identities to prevent repeated processing. `status.log` contains timestamps and status codes only. State files are account-private. Names are sanitized and Darwin's exclusive atomic rename prevents overwrites. Only files less than five minutes old are eligible for automatic processing. Renaming preserves the image bytes and creation date; the new filename also includes the original creation timestamp.
+Only the image is passed to the local system model. No transcript, image copies, filename history, app activity history, or model stderr is stored. `processed.json` keeps only the last 200 numeric file identities to prevent repeated processing. `status.log` contains timestamps, status codes, and numeric durations only. State files are account-private. Names are sanitized and Darwin's exclusive atomic rename prevents overwrites. Only files less than five minutes old are eligible for automatic processing. Renaming preserves the image bytes and creation date; the new filename also includes the original creation timestamp.
 
 Folder Actions are macOS's file-saved trigger mechanism for this workflow. The helper receives each file macOS adds to the configured screenshot destination, confirms Apple's screenshot metadata before asking the model, then exits. It does not scan the folder on startup. A cancelled/incomplete save or delayed/missed event can leave the standard name. A user rename during generation prevents the old path from being renamed. Model output is a fallible description; no screenshot text is executed.
 

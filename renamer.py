@@ -56,13 +56,18 @@ def ready(path):
     # Folder events can arrive before the screenshot's write/metadata is complete.
     previous = None
     stable = 0
-    for _ in range(20):
+    next_metadata_check = 0
+    for _ in range(100):
         current = identity(path)
         stable = stable + 1 if current == previous else 0
-        if stable >= 2 and current[2] > 0 and is_screenshot(path):
-            return current
+        if stable >= 2 and current[2] > 0 and time.monotonic() >= next_metadata_check:
+            if is_screenshot(path):
+                return current
+            # Keep the original grace period for delayed screenshot metadata,
+            # without launching xattr on every fast file-stability check.
+            next_metadata_check = time.monotonic() + .5
         previous = current
-        time.sleep(.5)
+        time.sleep(.1)
     raise ValueError('not-ready-or-not-screenshot')
 
 
@@ -110,7 +115,7 @@ def describe(path):
     return sanitize(json.loads(p.stdout)['title'])
 
 
-def process(path, processed, generate=describe, *, allow_existing=False):
+def process(path, processed, generate=describe, *, allow_existing=False, timings=None):
     path = Path(os.path.abspath(path))
     if path.parent != DESTINATION or path.is_symlink() or path.suffix.lower() not in ('.png', '.jpg', '.jpeg', '.heic'):
         return 'ignored'
@@ -120,8 +125,18 @@ def process(path, processed, generate=describe, *, allow_existing=False):
     # Only fresh save events; never sweep existing Desktop screenshots.
     if not allow_existing and time.time() - path.stat().st_birthtime > 300:
         return 'old-file-ignored'
-    info = ready(path)
-    title = generate(path)
+    started = time.monotonic()
+    try:
+        info = ready(path)
+    finally:
+        if timings is not None:
+            timings['ready'] = time.monotonic() - started
+    started = time.monotonic()
+    try:
+        title = generate(path)
+    finally:
+        if timings is not None:
+            timings['model'] = time.monotonic() - started
     if identity(path) != info:
         return 'changed-during-generation'
     stamp = datetime.datetime.fromtimestamp(path.stat().st_birthtime).strftime('%Y-%m-%d %H.%M.%S')
@@ -151,18 +166,26 @@ def main():
     os.umask(0o077)
     STATE.mkdir(parents=True, exist_ok=True)
     with (STATE / 'worker.lock').open('a') as lock:
+        started = time.monotonic()
         fcntl.flock(lock, fcntl.LOCK_EX)
+        lock_wait = time.monotonic() - started
         # A worker queued before uninstall must not recreate state or start inference.
         if not (ROOT / 'schema.json').exists():
             return
         processed = load_processed()
         for arg in sys.argv[1:]:
+            started = time.monotonic()
+            timings = {}
             try:
-                log(process(Path(arg), processed))
+                status = process(Path(arg), processed, timings=timings)
             except subprocess.TimeoutExpired:
-                log('model-timeout-original-kept')
+                status = 'model-timeout-original-kept'
             except Exception as exc:
-                log('original-kept-' + type(exc).__name__)
+                status = 'original-kept-' + type(exc).__name__
+            timings['total'] = time.monotonic() - started
+            timings['lock'] = lock_wait
+            log(status + ''.join(' ' + name + '=' + format(value, '.3f') + 's'
+                                 for name, value in timings.items()))
 
 
 if __name__ == '__main__':
